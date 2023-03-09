@@ -1,0 +1,49 @@
+bin
+obj
+csx
+.vs
+edge
+Publish
+.vscode
+
+*.user
+*.suo
+*.cscfg
+*.Cache
+project.lock.json
+
+/serverless/packages
+/serverless/TestResults
+
+/serverless/tools/NuGet.exe
+/serverless/App_Data
+/serverless/secrets
+/serverless/data
+.secrets
+appsettings.json
+local.settings.json
+
+node_modules
+dist
+
+# Local python packages
+.python_packages/
+
+# Python Environments
+.env
+.venv
+serverless/env/
+serverless/venv/
+serverless/ENV/
+serverless/env.bak/
+serverless/venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Azurite artifacts
+__blobstorage__
+__queuestorage__
+__azurite_db*__.json
