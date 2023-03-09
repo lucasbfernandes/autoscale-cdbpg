@@ -20,9 +20,14 @@ const createCluster: AzureFunction = async (context: Context, req: HttpRequest):
 	const credential = new DefaultAzureCredential();
 	const resourceClient = new ResourceManagementClient(credential, azureSubscriptionId);
 	const redisClient = await getRedisClient(context);
-
 	const deploymentRequest = req.body as DeploymentRequest;
 	const template = getDeploymentTemplate(deploymentRequest);
+
+	const resource = await redisClient.GET(deploymentRequest.name);
+	if (resource) {
+		context.res = { status: 400, body: { message: "Deployment already exists" }};
+		return;
+	}
 
 	try {
 		await redisClient.SET(deploymentRequest.name, JSON.stringify(deploymentRequest));
