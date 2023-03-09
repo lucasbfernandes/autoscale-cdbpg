@@ -8,11 +8,11 @@ import { DeploymentRequest } from "./request";
 
 const createCluster: AzureFunction = async (context: Context, req: HttpRequest): Promise<void> => {
 
-    const azureSubscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
+	const azureSubscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
 	const resourceGroup = process.env.DEPLOYMENT_RESOURCE_GROUP;
 
-    const credential = new DefaultAzureCredential();
-    const resourceClient = new ResourceManagementClient(credential, azureSubscriptionId);
+	const credential = new DefaultAzureCredential();
+	const resourceClient = new ResourceManagementClient(credential, azureSubscriptionId);
 	const redisClient = await getRedisClient(context);
 
 	const deploymentRequest = req.body as DeploymentRequest;
