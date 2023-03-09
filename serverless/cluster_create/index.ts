@@ -1,6 +1,9 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 import { DefaultAzureCredential } from "@azure/identity"
 import { Deployment, ResourceManagementClient } from "@azure/arm-resources";
+
+import * as redis from 'redis';
+
 import { DeploymentRequest } from "./request";
 
 const createCluster: AzureFunction = async (context: Context, req: HttpRequest): Promise<void> => {
@@ -9,16 +12,20 @@ const createCluster: AzureFunction = async (context: Context, req: HttpRequest):
 	const resourceGroup = process.env.DEPLOYMENT_RESOURCE_GROUP;
 
     const credential = new DefaultAzureCredential();
-    const client = new ResourceManagementClient(credential, azureSubscriptionId);
+    const resourceClient = new ResourceManagementClient(credential, azureSubscriptionId);
+	const redisClient = await getRedisClient(context);
+
 	const deploymentRequest = req.body as DeploymentRequest;
 	const template = getDeploymentTemplate(deploymentRequest);
 
 	try {
-		const response = await deployResource(deploymentRequest.name, client, template, resourceGroup);
-		context.res = { status: 200, body: JSON.stringify(response) };
+		await redisClient.SET(deploymentRequest.name, JSON.stringify(deploymentRequest));
+		await deployResource(deploymentRequest.name, resourceClient, template, resourceGroup);
+		context.res = { status: 200, body: { message: "Cluster deployed successfuly" } };
 	} catch(error) {
 		context.log(error);
-		context.res = { status: 500, body: JSON.stringify(error) };
+		await redisClient.DEL(deploymentRequest.name);
+		context.res = { status: 500, body: { message: "Failed to deploy cluster" } };
 	}
 };
 
@@ -69,6 +76,13 @@ const deployResource = async (
 	} catch(error) {
 		throw error;
 	}
+}
+
+const getRedisClient = async (context: Context) => {
+	const client = redis.createClient({ url: process.env.REDIS_CONNECTION_STRING });
+	client.on('error', err => context.log('Redis client error', err));
+	await client.connect();
+	return client;
 }
 
 export default createCluster;
