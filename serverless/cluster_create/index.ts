@@ -5,8 +5,14 @@ import { Deployment, ResourceManagementClient } from "@azure/arm-resources";
 import * as redis from 'redis';
 
 import { DeploymentRequest } from "./request";
+import { deploymentSchema } from "./validation";
 
 const createCluster: AzureFunction = async (context: Context, req: HttpRequest): Promise<void> => {
+	const validation = deploymentSchema.validate(req.body);
+	if (validation.error) {
+		context.res = { status: 400, body: { message: "Invalid request object" } };
+		return;
+	}
 
 	const azureSubscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
 	const resourceGroup = process.env.DEPLOYMENT_RESOURCE_GROUP;
@@ -21,11 +27,11 @@ const createCluster: AzureFunction = async (context: Context, req: HttpRequest):
 	try {
 		await redisClient.SET(deploymentRequest.name, JSON.stringify(deploymentRequest));
 		await deployResource(deploymentRequest.name, resourceClient, template, resourceGroup);
-		context.res = { status: 200, body: { message: "Cluster deployed successfuly" } };
+		context.res = { status: 200, body: { message: "Deployment started successfuly" } };
 	} catch(error) {
 		context.log(error);
 		await redisClient.DEL(deploymentRequest.name);
-		context.res = { status: 500, body: { message: "Failed to deploy cluster" } };
+		context.res = { status: 500, body: { message: "Failed to start deployment" } };
 	}
 };
 
