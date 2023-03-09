@@ -16,5 +16,5 @@
       "name": "res"
     }
   ],
-  "scriptFile": "../dist/cluster_update/index.js"
+  "scriptFile": "../dist/cpu_coordinator/index.js"
 }
