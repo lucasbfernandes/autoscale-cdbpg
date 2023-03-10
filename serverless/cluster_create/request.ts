@@ -4,7 +4,7 @@ export type DeploymentRequest = {
     location: string;
     tags: Tags;
     properties: Properties;
-}
+};
 
 export type Properties = {
     citusVersion: string;
@@ -20,9 +20,9 @@ export type Properties = {
     nodeStorageQuotaInMb: number;
     nodeVCores: number;
     postgresqlVersion: string;
-}
+};
 
 export type Tags = {
     tagName1: string;
     tagName2: string;
-}
+};

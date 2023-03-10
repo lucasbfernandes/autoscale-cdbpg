@@ -4,6 +4,7 @@ export type DeploymentObject = {
     location: string;
     tags: Tags;
     properties: Properties;
+    updatedAt?: Date;
 }
 
 export type Properties = {
