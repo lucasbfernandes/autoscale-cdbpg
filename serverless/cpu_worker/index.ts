@@ -33,14 +33,14 @@ const cpuWorker: AzureFunction = async function (context: Context, req: HttpRequ
     }
 
     const currentState = JSON.parse(redisValue) as DeploymentObject;
-    if (currentState.updatedAt && moment(currentState.updatedAt).isSame(moment(), 'day')) {
+    if (currentState.autoScaledAt && moment(currentState.autoScaledAt).isSame(moment(), 'day')) {
         context.res = { status: 400, body: { message: "Cluster was already auto-scaled today" } };
         return;
     }
 
 	const newState = { ...currentState };
 	newState.properties.nodeCount += 2;
-	newState.updatedAt = new Date();
+	newState.autoScaledAt = new Date();
 	const template = getUpdateTemplate(newState);
 
     try {
