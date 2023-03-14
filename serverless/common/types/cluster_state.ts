@@ -1,10 +1,12 @@
-export type DeploymentRequest = {
+export type ClusterState = {
     name: string;
     clusterName: string;
     location: string;
     tags: Tags;
     properties: Properties;
-};
+    autoScaledAt?: Date;
+    rebalancedAt?: Date;
+}
 
 export type Properties = {
     citusVersion: string;
@@ -20,9 +22,9 @@ export type Properties = {
     nodeStorageQuotaInMb: number;
     nodeVCores: number;
     postgresqlVersion: string;
-};
+}
 
 export type Tags = {
     tagName1: string;
     tagName2: string;
-};
+}

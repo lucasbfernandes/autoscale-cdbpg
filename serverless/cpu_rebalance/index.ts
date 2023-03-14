@@ -1,58 +1,57 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 
-import * as moment from 'moment';
-import * as postgres from 'postgres';
-import * as redis from "redis";
+import * as postgres from "postgres";
 
-import { AlertRequest } from "./alert";
-import { DeploymentObject } from "./deployment";
-import { alertSchema } from "./validation";
+import {
+    AlertRequest, 
+    FunctionError, 
+    ClusterState, 
+    getRedisClient,
+    setClusterState,
+    validateAlertInput,
+    getClusterState,
+    validateClusterOperation
+} from "../common";
 
 const cpuRebalance: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
-    const validation = alertSchema.validate(req.body);
-	if (validation.error) {
-		context.res = { status: 400, body: { message: "Invalid request object" } };
-		return;
-	}
+    let deploymentName: string;
+    let currentState: ClusterState;
 
-    const redisClient = await getRedisClient(context);
-    const alertRequest = req.body as AlertRequest;
-    const deploymentName = alertRequest.commonLabels.deploymentName;
-
-    const redisValue = await redisClient.GET(deploymentName);
-    if (!redisValue) {
-        context.res = { status: 400, body: { message: "Invalid deployment name" } };
-        return;
-    }
-
-    const currentState = JSON.parse(redisValue) as DeploymentObject;
-    if (currentState.rebalancedAt && moment(currentState.rebalancedAt).isSame(moment(), 'day')) {
-        context.res = { status: 400, body: { message: "Cluster was already rebalanced today" } };
-        return;
-    }
-
-    const newState = { ...currentState };
-	newState.rebalancedAt = new Date();
+    const redisClient = await getRedisClient();
 
     try {
-        await redisClient.SET(deploymentName, JSON.stringify(newState));
-        const sql = postgres(process.env.PG_CONNECTION_URL);
-        sql`
-            SELECT rebalance_table_shards(rebalance_strategy:='by_shard_count');
-        `;
-        context.log("REBALANCER WORKED!");
+        validateAlertInput(req);
+
+        deploymentName = (req.body as AlertRequest).commonLabels.deploymentName;
+        currentState = await getClusterState(deploymentName, redisClient);
+
+        validateClusterOperation(currentState, "rebalancedAt");
+
+        const newState = getNewClusterState(currentState);
+        await setClusterState(deploymentName, newState, redisClient);
+
+        triggerRebalancer();
+
         context.res = { status: 200, body: { message: "Rebalancer started successfully" } };
     } catch(error) {
-        await redisClient.SET(deploymentName, JSON.stringify(currentState));
-        context.res = { status: 500, body: { message: "Failed to rebalance shards" } };
+        await setClusterState(deploymentName, currentState, redisClient);
+        if (error instanceof FunctionError) {
+            context.res = { status: error.code, body: { message: error.message } };
+        }
     }
 };
 
-const getRedisClient = async (context: Context) => {
-	const client = redis.createClient({ url: process.env.REDIS_CONNECTION_STRING });
-	client.on('error', err => context.log('Redis client error', err));
-	await client.connect();
-	return client;
+const triggerRebalancer = () => {
+    const sql = postgres(process.env.PG_CONNECTION_URL);
+    sql`
+        SELECT rebalance_table_shards(rebalance_strategy:='by_shard_count');
+    `;
+};
+
+const getNewClusterState = (currentState: ClusterState) => {
+    const newState = { ...currentState };
+    newState.rebalancedAt = new Date();
+    return newState;
 };
 
 export default cpuRebalance;
