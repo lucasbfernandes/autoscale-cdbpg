@@ -1,4 +1,4 @@
-\set company_id random(1, 10000000)
+\set company_id random(1, 2000)
 \set ad_id random(1, 75000000)
 BEGIN;
     INSERT INTO public.clicks(

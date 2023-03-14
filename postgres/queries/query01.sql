@@ -1,6 +1,6 @@
-\set company_id1 random(1, 10000000)
-\set company_id2 random(1, 10000000)
-\set company_id3 random(1, 10000000)
+\set company_id1 random(1, 2000)
+\set company_id2 random(1, 2000)
+\set company_id3 random(1, 2000)
 BEGIN;
     SELECT
         ads.company_id,

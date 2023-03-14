@@ -10,7 +10,8 @@ import {
     setClusterState,
     validateAlertInput,
     getClusterState,
-    validateClusterOperation
+    validateClusterOperation,
+    closeRedisConnection
 } from "../common";
 
 const cpuRebalance: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
@@ -18,6 +19,7 @@ const cpuRebalance: AzureFunction = async function (context: Context, req: HttpR
     let currentState: ClusterState;
 
     const redisClient = await getRedisClient();
+    const pgClient = postgres(process.env.PG_CONNECTION_URL);
 
     try {
         validateAlertInput(req);
@@ -30,20 +32,22 @@ const cpuRebalance: AzureFunction = async function (context: Context, req: HttpR
         const newState = getNewClusterState(currentState);
         await setClusterState(deploymentName, newState, redisClient);
 
-        triggerRebalancer();
+        await triggerRebalancer(pgClient);
 
         context.res = { status: 200, body: { message: "Rebalancer started successfully" } };
     } catch(error) {
         await setClusterState(deploymentName, currentState, redisClient);
+
         if (error instanceof FunctionError) {
+            context.log(error.message);
             context.res = { status: error.code, body: { message: error.message } };
         }
+        await closeRedisConnection(redisClient);
     }
 };
 
-const triggerRebalancer = () => {
-    const sql = postgres(process.env.PG_CONNECTION_URL);
-    sql`
+const triggerRebalancer = async (sql) => {
+    await sql`
         SELECT rebalance_table_shards(rebalance_strategy:='by_shard_count');
     `;
 };

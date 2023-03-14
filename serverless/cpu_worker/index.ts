@@ -12,7 +12,8 @@ import {
 	getRedisClient, 
 	setClusterState, 
 	validateAlertInput, 
-	validateClusterOperation
+	validateClusterOperation,
+	closeRedisConnection
 } from "../common";
 
 const cpuWorker: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
@@ -26,6 +27,7 @@ const cpuWorker: AzureFunction = async function (context: Context, req: HttpRequ
     const redisClient = await getRedisClient();
 
     try {
+		context.log(JSON.stringify(req.body));
         validateAlertInput(req);
 
         deploymentName = (req.body as AlertRequest).commonLabels.deploymentName;
@@ -42,9 +44,12 @@ const cpuWorker: AzureFunction = async function (context: Context, req: HttpRequ
         context.res = { status: 200, body: { message: "Auto-scaling started successfully" } };
     } catch(error) {
         await setClusterState(deploymentName, currentState, redisClient);
+
         if (error instanceof FunctionError) {
+			context.log(error.message);
             context.res = { status: error.code, body: { message: error.message } };
         }
+		await closeRedisConnection(redisClient);
     }
 };
 

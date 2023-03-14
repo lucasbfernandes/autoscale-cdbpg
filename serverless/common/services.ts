@@ -10,8 +10,13 @@ import { deploymentSchema } from "./validations/deployment";
 
 export const getRedisClient = async () => {
 	const client = redis.createClient({ url: process.env.REDIS_CONNECTION_STRING });
+	client.on('error', err => console.log('Redis Client Error', err));
 	await client.connect();
 	return client;
+};
+
+export const closeRedisConnection = async (client) => {
+	await client.disconnect();
 };
 
 export const checkIfOperationMadeToday = (state: ClusterState, operationKey: string) => {
@@ -26,23 +31,27 @@ export const deleteRedisKey = async (key: string, client) => {
     await client.DEL(key);
 };
 
+export const getRedisKey = async (key: string, client) => {
+    return await client.GET(key);
+};
+
 export const validateAlertInput = (req: HttpRequest) => {
     const validation = alertSchema.validate(req.body);
 	if (validation.error) {
-		throw new FunctionError(400, "Invalid request object");
+		throw new FunctionError(200, "Invalid request object");
 	}
 };
 
 export const validateDeploymentInput = (req: HttpRequest) => {
     const validation = deploymentSchema.validate(req.body);
 	if (validation.error) {
-		throw new FunctionError(400, "Invalid request object");
+		throw new FunctionError(200, "Invalid request object");
 	}
 };
 
 export const validateClusterOperation = (clusterState: ClusterState, operationKey: string) => {
     if (checkIfOperationMadeToday(clusterState, operationKey)) {
-        throw new FunctionError(400, "Cannot perform this operation again today");
+        throw new FunctionError(200, "Cannot perform this operation again today");
     }
 };
 
@@ -57,7 +66,7 @@ export const deleteClusterState = async (deploymentName: string, client) => {
 export const getClusterState = async (deploymentName: string, client) => {
     const redisValue = await client.GET(deploymentName);
     if (!redisValue) {
-        throw new FunctionError(400, "Invalid deployment name");
+        throw new FunctionError(200, "Invalid deployment name");
     }
     return JSON.parse(redisValue) as ClusterState;
 };

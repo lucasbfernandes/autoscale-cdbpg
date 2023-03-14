@@ -11,7 +11,9 @@ import {
 	getRedisClient, 
 	setClusterState, 
 	deleteClusterState,
-	validateDeploymentInput
+	validateDeploymentInput,
+	getRedisKey,
+	closeRedisConnection
 } from "../common";
 
 const createCluster: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
@@ -39,14 +41,17 @@ const createCluster: AzureFunction = async function (context: Context, req: Http
         context.res = { status: 200, body: { message: "Cluster creation started successfully" } };
     } catch(error) {
         await deleteClusterState(deploymentName, redisClient);
+
         if (error instanceof FunctionError) {
+			context.log(error.message);
             context.res = { status: error.code, body: { message: error.message } };
         }
+		await closeRedisConnection(redisClient);
     }
 };
 
 const checkIfDeploymentExists = async (deploymentName: string, client) => {
-	const currentState = await getClusterState(deploymentName, client);
+	const currentState = await getRedisKey(deploymentName, client);
 	if (currentState) {
 		throw new FunctionError(400, "Deployment already exists");
 	}

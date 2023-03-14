@@ -6,6 +6,7 @@ export type ClusterState = {
     properties: Properties;
     autoScaledAt?: Date;
     rebalancedAt?: Date;
+    tenantIsolatedAt?: Date;
 }
 
 export type Properties = {

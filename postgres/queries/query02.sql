@@ -1,4 +1,4 @@
-\set company_id random(1, 10000000)
+\set company_id random(1, 2000)
 BEGIN;
     SELECT
         co.id as company_id,

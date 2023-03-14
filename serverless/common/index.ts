@@ -13,7 +13,9 @@ import {
     getClusterState,
     createOrUpdateCluster,
     deleteClusterState,
-    validateDeploymentInput
+    validateDeploymentInput,
+    getRedisKey,
+    closeRedisConnection
 } from "./services";
 
 export {
@@ -22,6 +24,7 @@ export {
     ClusterState,
     FunctionError,
     setRedisValue,
+    getRedisKey,
     getRedisClient,
     getClusterARMObject,
     checkIfOperationMadeToday,
@@ -31,5 +34,6 @@ export {
     setClusterState,
     getClusterState,
     deleteClusterState,
-    createOrUpdateCluster
+    createOrUpdateCluster,
+    closeRedisConnection
 };
