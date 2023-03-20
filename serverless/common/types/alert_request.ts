@@ -5,4 +5,5 @@ export type AlertRequest = {
 export type CommonLabels = {
     metricType: string;
     deploymentName: string;
+    company_id: string;
 };

@@ -46,7 +46,7 @@ const cpuWorker: AzureFunction = async function (context: Context, req: HttpRequ
         await setClusterState(deploymentName, currentState, redisClient);
 
         if (error instanceof FunctionError) {
-			context.log(error.message);
+			context.log("Error:", error.message);
             context.res = { status: error.code, body: { message: error.message } };
         }
 		await closeRedisConnection(redisClient);

@@ -43,7 +43,7 @@ const createCluster: AzureFunction = async function (context: Context, req: Http
         await deleteClusterState(deploymentName, redisClient);
 
         if (error instanceof FunctionError) {
-			context.log(error.message);
+            context.log("Error:", error.message);
             context.res = { status: error.code, body: { message: error.message } };
         }
 		await closeRedisConnection(redisClient);

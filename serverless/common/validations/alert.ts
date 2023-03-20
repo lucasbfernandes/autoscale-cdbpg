@@ -11,7 +11,9 @@ export const alertSchema = Joi.object({
         alertname: Joi.string(),
         metricType: Joi.string().required(),
         deploymentName: Joi.string().required(),
-        grafana_folder: Joi.string()
+        grafana_folder: Joi.string(),
+        shard_id: Joi.string(),
+        company_id: Joi.string()
     }).required(),
 
     commonAnnotations: Joi.any(),

@@ -22,6 +22,7 @@ const cpuRebalance: AzureFunction = async function (context: Context, req: HttpR
     const pgClient = postgres(process.env.PG_CONNECTION_URL);
 
     try {
+        context.log(JSON.stringify(req.body));
         validateAlertInput(req);
 
         deploymentName = (req.body as AlertRequest).commonLabels.deploymentName;
@@ -39,7 +40,7 @@ const cpuRebalance: AzureFunction = async function (context: Context, req: HttpR
         await setClusterState(deploymentName, currentState, redisClient);
 
         if (error instanceof FunctionError) {
-            context.log(error.message);
+            context.log("Error:", error.message);
             context.res = { status: error.code, body: { message: error.message } };
         }
         await closeRedisConnection(redisClient);
@@ -48,7 +49,7 @@ const cpuRebalance: AzureFunction = async function (context: Context, req: HttpR
 
 const triggerRebalancer = async (sql) => {
     await sql`
-        SELECT rebalance_table_shards(rebalance_strategy:='by_shard_count');
+        SELECT citus_rebalance_start(rebalance_strategy:='by_shard_count', shard_transfer_mode:='block_writes');
     `;
 };
 
